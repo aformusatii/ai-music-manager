@@ -23,6 +23,8 @@ export const appConfig = {
   },
   download: {
     ytDlpPath: process.env.YTDLP_PATH || 'yt-dlp',
-    audioFormat: process.env.DOWNLOAD_AUDIO_FORMAT || 'm4a'
+    audioFormat: process.env.DOWNLOAD_AUDIO_FORMAT || 'm4a',
+    maxConcurrentJobs: Number(process.env.DOWNLOAD_MAX_CONCURRENT || 1),
+    logFile: process.env.DOWNLOAD_LOG_FILE || path.join(rootDir, 'logs', 'download-jobs.log')
   }
 };

@@ -100,8 +100,8 @@ async function deleteTrackFile(relativePath) {
 tracksRouter.post('/:id/download', async (req, res) => {
   const { videoId, query } = req.body || {};
   try {
-    const resolvedVideoId = await enqueueDownload(req.params.id, videoId, query);
-    res.json({ message: 'Download started', videoId: resolvedVideoId });
+    const { videoId: resolvedVideoId, jobId } = await enqueueDownload(req.params.id, videoId, query);
+    res.json({ message: 'Download started', videoId: resolvedVideoId, jobId });
   } catch (error) {
     res.status(400).json({ error: error.message });
   }
@@ -115,8 +115,8 @@ tracksRouter.post('/downloads/bulk', async (req, res) => {
   const results = [];
   for (const id of trackIds) {
     try {
-      const videoId = await enqueueDownload(id);
-      results.push({ id, status: 'ok', videoId });
+      const { videoId, jobId } = await enqueueDownload(id);
+      results.push({ id, status: 'ok', videoId, jobId });
     } catch (error) {
       results.push({ id, status: 'error', error: error.message });
     }
@@ -140,6 +140,11 @@ async function enqueueDownload(trackId, providedVideoId, providedQuery) {
     }
   }
   await setDownloadStatus(track.id, 'download_pending');
-  downloadManager.enqueue({ trackId: track.id, videoId });
-  return videoId;
+  const jobId = downloadManager.enqueue({
+    trackId: track.id,
+    videoId,
+    trackName: track.name,
+    artists: track.artists
+  });
+  return { videoId, jobId };
 }

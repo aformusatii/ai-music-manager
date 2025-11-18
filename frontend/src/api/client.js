@@ -38,6 +38,11 @@ export async function bulkDownload(trackIds) {
   return api.post('/tracks/downloads/bulk', { trackIds })
 }
 
+export async function fetchDownloadJobs() {
+  const { data } = await api.get('/downloads/jobs')
+  return data
+}
+
 export async function fetchPlaylists() {
   const { data } = await api.get('/playlists')
   return data

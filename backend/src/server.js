@@ -9,6 +9,7 @@ import { appConfig } from './config.js';
 import { spotifyRouter } from './routes/spotify.js';
 import { tracksRouter } from './routes/tracks.js';
 import { playlistsRouter } from './routes/playlists.js';
+import { downloadsRouter } from './routes/downloads.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,6 +30,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/spotify', spotifyRouter);
 app.use('/api/tracks', tracksRouter);
 app.use('/api/playlists', playlistsRouter);
+app.use('/api/downloads', downloadsRouter);
 
 const frontendDist = path.resolve(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDist)) {

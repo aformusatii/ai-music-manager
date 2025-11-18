@@ -38,11 +38,15 @@ YOUTUBE_API_KEY=your-youtube-api-key
 DB_PATH=./backend/data/music-db
 DOWNLOAD_DIR=./backend/downloads
 YTDLP_PATH=yt-dlp
+DOWNLOAD_MAX_CONCURRENT=3
+DOWNLOAD_LOG_FILE=./backend/logs/download-jobs.log
 ```
 
 - `DB_PATH` points to the Level database folder.
 - `DOWNLOAD_DIR` is where yt-dlp stores audio files. Files are exposed under `/downloads/...` for playback.
 - `YTDLP_PATH` lets you point to a custom yt-dlp binary if needed.
+- `DOWNLOAD_MAX_CONCURRENT` controls how many yt-dlp jobs can run in parallel (defaults to `1`).
+- `DOWNLOAD_LOG_FILE` stores the aggregated download job log that also powers the live log stream in the UI.
 
 ## Installation
 
@@ -82,7 +86,7 @@ PORT=4000 npm run start  # serves API + built frontend + downloads
 
 - **Spotify Search**: Search artists, browse their albums/tracks, toggle visible columns, select tracks, and import them into the local database without duplicates.
 - **Local Library**: Filter, sort, and paginate tracks; toggle column visibility; delete tracks (optionally removing downloaded files); trigger single or bulk YouTube downloads; add to playlists; build ad-hoc playback queues.
-- **YouTube Downloads**: Backend resolves the best video via the YouTube Data API, enqueues jobs for yt-dlp, and updates download status (`not_downloaded`, `download_pending`, `download_in_progress`, `downloaded`, `download_failed`).
+- **YouTube Downloads**: Backend resolves the best video via the YouTube Data API, enqueues jobs for yt-dlp, and updates download status (`not_downloaded`, `download_pending`, `download_in_progress`, `downloaded`, `download_failed`). Parallelism is configurable, and a dedicated *Download Jobs* view surfaces live stats plus aggregated yt-dlp logs.
 - **Playlists**: Create/update/delete playlists, avoid duplicate entries, reorder tracks, and detach tracks without deleting from the library.
 - **Player**: Simple audio player that can load saved playlists or the ad-hoc queue; includes play/pause/next/previous controls and displays metadata.
 - **PWA**: Installable via the included `manifest.webmanifest` and Workbox-powered service worker.
@@ -90,7 +94,7 @@ PORT=4000 npm run start  # serves API + built frontend + downloads
 ## Notes & Limitations
 
 - The Spotify integration uses the Client Credentials flow, so only public artist/album/track data is available (no user-specific data).
-- yt-dlp downloads run sequentially through a tiny in-memory queue. For large batches this may take time; the README and UI call this out.
+- yt-dlp downloads use an in-memory queue with configurable parallelism. Increase `DOWNLOAD_MAX_CONCURRENT` for faster bulk imports, but keep host/network limits in mind.
 - The backend is single-user by design and does not include authentication.
 - LevelDB data and downloaded files remain on disk until manually removed.
 

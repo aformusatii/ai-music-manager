@@ -147,21 +147,25 @@ onMounted(() => {
         </div>
 
         <div class="list-group shadow-sm">
-          <button
+          <div
             v-for="playlist in playlists"
             :key="playlist.id"
             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
             :class="{ active: playlist.id === selectedPlaylistId }"
             @click="selectPlaylist(playlist.id)"
+            role="button"
+            tabindex="0"
+            @keydown.enter.prevent="selectPlaylist(playlist.id)"
+            @keydown.space.prevent="selectPlaylist(playlist.id)"
           >
             <span>
               <strong>{{ playlist.name }}</strong>
               <small class="d-block text-muted">{{ playlist.trackCount }} tracks</small>
             </span>
-            <button class="btn btn-sm btn-outline-danger" @click.stop="removeSelectedPlaylist(playlist.id)">
+            <button type="button" class="btn btn-sm btn-outline-danger" @click.stop="removeSelectedPlaylist(playlist.id)">
               <Trash2 size="16" />
             </button>
-          </button>
+          </div>
         </div>
       </div>
 
