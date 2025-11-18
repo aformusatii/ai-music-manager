@@ -1,0 +1,23 @@
+{
+  "name": "music-manager",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
+    "dev:frontend": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "start": "npm run start --workspace backend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Music Manager web application",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
