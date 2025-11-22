@@ -1,6 +1,6 @@
 # Music Manager
 
-Music Manager is a full-stack Node.js + Vue application that lets you search Spotify for artists, import their tracks into a local LevelDB database, manage downloads via YouTube + yt-dlp, organise playlists, and play audio through a built‑in player. The UI favours simple interactions so junior developers can follow along easily.
+Music Manager is a full-stack Node.js + Vue application that lets you search Spotify for artists, import their tracks into a local LevelDB database, manage downloads via YouTube + yt-dlp, organise playlists, and play audio through a built‑in player.
 
 ## Tech Stack
 
