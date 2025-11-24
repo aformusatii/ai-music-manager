@@ -5,6 +5,7 @@ import { EventEmitter } from 'node:events';
 import { appConfig } from '../config.js';
 import { setDownloadStatus, getTrack } from '../db/tracks.js';
 import { sanitizeFilename } from '../utils/file.js';
+import { resolveYoutubeTrack } from './youtube.js';
 
 fs.mkdirSync(appConfig.downloadsDir, { recursive: true });
 
@@ -79,15 +80,30 @@ class DownloadManager extends EventEmitter {
   }
 
   async executeJob(job) {
-    const { trackId, videoId } = job;
+    const { trackId } = job;
     const track = await getTrack(trackId);
     if (!track) {
       await setDownloadStatus(trackId, 'download_failed', { error: 'Track not found' });
       throw new Error('Track not found');
     }
+    let videoId = job.videoId;
     if (!videoId) {
-      await setDownloadStatus(trackId, 'download_failed', { error: 'Missing YouTube video id' });
-      throw new Error('Missing YouTube video id');
+      this.log(job.id, 'Resolving YouTube video via AI workflow');
+      const searchResult = await resolveYoutubeTrack(track, {
+        onLog: (message) => this.log(job.id, `[ai] ${message}`)
+      });
+      if (searchResult.status !== 'success' || !searchResult.videoId) {
+        const errorMessage = searchResult.error || searchResult.reason || 'Unable to find matching YouTube video';
+        await setDownloadStatus(trackId, 'download_failed', { error: errorMessage });
+        throw new Error(errorMessage);
+      }
+      videoId = searchResult.videoId;
+      job.videoId = videoId;
+      const attemptNote = searchResult.attempts ? ` after ${searchResult.attempts} attempt(s)` : '';
+      const reasonNote = searchResult.reason ? ` (${searchResult.reason})` : '';
+      this.log(job.id, `Matched YouTube video ${videoId}${attemptNote}${reasonNote}`);
+    } else {
+      this.log(job.id, `Using provided YouTube video id ${videoId}`);
     }
     const safeName = sanitizeFilename(`${track.artists?.[0] || 'unknown'}_${track.name}`);
     const targetFilename = `${safeName}_${trackId}.${appConfig.download.audioFormat}`;

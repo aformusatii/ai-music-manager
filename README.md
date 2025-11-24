@@ -25,10 +25,15 @@ Music Manager is a full-stack Node.js + Vue application that lets you search Spo
    - Create a Google Cloud project → enable the *YouTube Data API v3*.
    - Create an API key under *APIs & Services → Credentials*.
    - Restrict the key if desired (HTTP referrers or IPs).
+5. **OpenAI / LLM credentials** (used for the AI-assisted YouTube resolver).
+   - Create an API key at [https://platform.openai.com/api-keys](https://platform.openai.com/api-keys).
+   - The backend currently targets the Chat Completions API; any `gpt-4o`/`gpt-4o-mini` compatible model works.
+   - Keep the key private—store it only inside the project `.env` file (see configuration below).
+   - Optional: customise behaviour with `AI_YT_SYSTEM_PROMPT` or lower the number of tool calls via `AI_YT_MAX_ATTEMPTS`.
 
 ## Configuration
 
-Create a `.env` file at the project root (copy `.env.example`) and fill in your credentials:
+Create a `.env` file at the project root (copy `.env.example`) and fill in your credentials (the backend loads this root file even when started from the `backend` workspace):
 
 ```
 PORT=4000
@@ -40,6 +45,11 @@ DOWNLOAD_DIR=./backend/downloads
 YTDLP_PATH=yt-dlp
 DOWNLOAD_MAX_CONCURRENT=3
 DOWNLOAD_LOG_FILE=./backend/logs/download-jobs.log
+AI_PROVIDER=openai
+AI_API_KEY=your-openai-api-key
+AI_MODEL=gpt-4o-mini
+AI_YT_MAX_ATTEMPTS=3
+AI_YT_SYSTEM_PROMPT=
 ```
 
 - `DB_PATH` points to the Level database folder.
@@ -47,6 +57,9 @@ DOWNLOAD_LOG_FILE=./backend/logs/download-jobs.log
 - `YTDLP_PATH` lets you point to a custom yt-dlp binary if needed.
 - `DOWNLOAD_MAX_CONCURRENT` controls how many yt-dlp jobs can run in parallel (defaults to `1`).
 - `DOWNLOAD_LOG_FILE` stores the aggregated download job log that also powers the live log stream in the UI.
+- `AI_PROVIDER`, `AI_API_KEY`, and `AI_MODEL` configure the LLM that drives the multi-attempt YouTube search (currently OpenAI only).
+- `AI_YT_MAX_ATTEMPTS` caps how many tool-driven searches the agent will execute per track (defaults to `3`).
+- `AI_YT_SYSTEM_PROMPT` lets you override the default system instructions that steer the YouTube search agent.
 
 ## Installation
 
@@ -86,7 +99,7 @@ PORT=4000 npm run start  # serves API + built frontend + downloads
 
 - **Spotify Search**: Search artists, browse their albums/tracks, toggle visible columns, select tracks, and import them into the local database without duplicates.
 - **Local Library**: Filter, sort, and paginate tracks; toggle column visibility; delete tracks (optionally removing downloaded files); trigger single or bulk YouTube downloads; add to playlists; build ad-hoc playback queues.
-- **YouTube Downloads**: Backend resolves the best video via the YouTube Data API, enqueues jobs for yt-dlp, and updates download status (`not_downloaded`, `download_pending`, `download_in_progress`, `downloaded`, `download_failed`). Parallelism is configurable, and a dedicated *Download Jobs* view surfaces live stats plus aggregated yt-dlp logs.
+- **YouTube Downloads**: Backend now resolves the best video through an AI-guided workflow that calls the YouTube Data API as a tool, then enqueues yt-dlp jobs and updates download status (`not_downloaded`, `download_pending`, `download_in_progress`, `downloaded`, `download_failed`). Parallelism is configurable, and a dedicated *Download Jobs* view surfaces live stats plus aggregated yt-dlp logs.
 - **Playlists**: Create/update/delete playlists, avoid duplicate entries, reorder tracks, and detach tracks without deleting from the library.
 - **Player**: Simple audio player that can load saved playlists or the ad-hoc queue; includes play/pause/next/previous controls and displays metadata.
 - **PWA**: Installable via the included `manifest.webmanifest` and Workbox-powered service worker.
@@ -102,5 +115,6 @@ PORT=4000 npm run start  # serves API + built frontend + downloads
 
 - **Spotify errors**: Double-check the client ID/secret and confirm the app is enabled in the developer dashboard.
 - **YouTube errors**: Ensure the API key has the YouTube Data API enabled and the quota is not exceeded. The backend returns helpful messages (e.g., "No YouTube results found").
+- **AI errors**: When the agent cannot run (missing key, provider mismatch, or model issues) the backend falls back to a simple YouTube search but will mark the track as failed if no match is found. Check `AI_*` settings and logs for details.
 - **yt-dlp missing**: Install yt-dlp and ensure the binary path matches `YTDLP_PATH`.
 - **Reverse proxy usage**: The frontend uses relative URLs for APIs and assets, so you can proxy `/api` to the backend and `/` to the frontend/static bundle.

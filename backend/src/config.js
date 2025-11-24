@@ -1,11 +1,24 @@
-import { config as loadEnv } from 'dotenv';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-loadEnv();
+import { config as loadEnv } from 'dotenv';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
+const projectRoot = path.resolve(rootDir, '..');
+
+const envFiles = [
+  path.join(projectRoot, '.env'),
+  path.join(rootDir, '.env')
+];
+
+let envLoaded = false;
+for (const envPath of envFiles) {
+  if (fs.existsSync(envPath)) {
+    loadEnv({ path: envPath, override: envLoaded });
+    envLoaded = true;
+  }
+}
 
 export const appConfig = {
   port: Number(process.env.PORT || 4000),
@@ -20,6 +33,15 @@ export const appConfig = {
   youtube: {
     apiKey: process.env.YOUTUBE_API_KEY || '',
     maxResults: Number(process.env.YOUTUBE_MAX_RESULTS || 3)
+  },
+  ai: {
+    provider: process.env.AI_PROVIDER || 'openai',
+    apiKey: process.env.AI_API_KEY || process.env.OPENAI_API_KEY || '',
+    model: process.env.AI_MODEL || 'gpt-4o-mini',
+    youtubeSearch: {
+      maxAttempts: Number(process.env.AI_YT_MAX_ATTEMPTS || 3),
+      systemPrompt: process.env.AI_YT_SYSTEM_PROMPT || ''
+    }
   },
   download: {
     ytDlpPath: process.env.YTDLP_PATH || 'yt-dlp',

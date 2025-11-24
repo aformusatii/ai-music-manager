@@ -6,7 +6,9 @@
 - You are writing simple easily maintainable code which favours simplicity over generalization. 
 - The code you will write will be given to junior developers who are new to programing, therfore the constructions you will use will be SIMPLE!
 - You are going to comment the code where it is more difficult.
-- You will use the following tech stack:
+
+## Tech stack:
+- You will use the following tech stack while building the app.
     * Node.js: **latest LTS**
     * Package manager: **npm**
     * Module format: **ESM** across backend and frontend
@@ -58,3 +60,6 @@
 - Root `npm run dev` runs both backend and frontend concurrently; Vite proxies `/api` + `/downloads` to Express so the SPA and API share an origin during development.
 - Backend ensures download/log/data directories exist before use, so yt-dlp, SSE logs, and LevelDB all have persistent storage under `backend/`.
 - Previous iterations already scaffolded the project, wired download + playlist flows, and added PWA assets—future work should extend within this structure rather than replacing it.
+- YouTube search + selection is now centralized in `backend/src/services/youtube.js`, which drives an OpenAI chat workflow that can call a `youtubeSearch` tool up to `AI_YT_MAX_ATTEMPTS` times before returning a structured `{status, videoId, reason, error}` response (falls back to a simple query when AI credentials are missing).
+- Download jobs always start in the async `DownloadManager` queue; if no `videoId` is provided, the job throttling automatically runs the AI resolver, logs its reasoning, and only then spawns yt-dlp—routes never hit YouTube directly anymore.
+- `.env`/.`config.js` now include `AI_PROVIDER`, `AI_API_KEY`, `AI_MODEL`, `AI_YT_MAX_ATTEMPTS`, and `AI_YT_SYSTEM_PROMPT` so future work should read those settings instead of hardcoding LLM behaviour.

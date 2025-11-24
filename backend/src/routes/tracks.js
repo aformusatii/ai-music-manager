@@ -4,7 +4,6 @@ import path from 'node:path';
 import { appConfig } from '../config.js';
 import { bulkUpsertTracks, getTrack, listTracks, removeTrack, setDownloadStatus, upsertTrack } from '../db/tracks.js';
 import { downloadManager } from '../services/downloadManager.js';
-import { buildTrackQuery, searchYoutubeVideos } from '../services/youtube.js';
 
 export const tracksRouter = express.Router();
 
@@ -98,9 +97,9 @@ async function deleteTrackFile(relativePath) {
 }
 
 tracksRouter.post('/:id/download', async (req, res) => {
-  const { videoId, query } = req.body || {};
+  const { videoId } = req.body || {};
   try {
-    const { videoId: resolvedVideoId, jobId } = await enqueueDownload(req.params.id, videoId, query);
+    const { jobId, videoId: resolvedVideoId } = await enqueueDownload(req.params.id, videoId);
     res.json({ message: 'Download started', videoId: resolvedVideoId, jobId });
   } catch (error) {
     res.status(400).json({ error: error.message });
@@ -124,27 +123,17 @@ tracksRouter.post('/downloads/bulk', async (req, res) => {
   res.json({ results });
 });
 
-async function enqueueDownload(trackId, providedVideoId, providedQuery) {
+async function enqueueDownload(trackId, providedVideoId) {
   const track = await getTrack(trackId);
   if (!track) {
     throw new Error('Track not found');
   }
-  let videoId = providedVideoId;
-  if (!videoId) {
-    const query = providedQuery || buildTrackQuery(track);
-    const results = await searchYoutubeVideos(query);
-    videoId = results[0]?.videoId;
-    if (!videoId) {
-      await setDownloadStatus(track.id, 'download_failed', { error: 'No YouTube results' });
-      throw new Error('No YouTube results found');
-    }
-  }
   await setDownloadStatus(track.id, 'download_pending');
   const jobId = downloadManager.enqueue({
     trackId: track.id,
-    videoId,
+    videoId: providedVideoId || null,
     trackName: track.name,
     artists: track.artists
   });
-  return { videoId, jobId };
+  return { jobId, videoId: providedVideoId || null };
 }
