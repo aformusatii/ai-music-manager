@@ -10,6 +10,7 @@ import { spotifyRouter } from './routes/spotify.js';
 import { tracksRouter } from './routes/tracks.js';
 import { playlistsRouter } from './routes/playlists.js';
 import { downloadsRouter } from './routes/downloads.js';
+import { youtubeRouter } from './routes/youtube.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -31,6 +32,7 @@ app.use('/api/spotify', spotifyRouter);
 app.use('/api/tracks', tracksRouter);
 app.use('/api/playlists', playlistsRouter);
 app.use('/api/downloads', downloadsRouter);
+app.use('/api/youtube', youtubeRouter);
 
 const frontendDist = path.resolve(__dirname, '../../frontend/dist');
 if (fs.existsSync(frontendDist)) {

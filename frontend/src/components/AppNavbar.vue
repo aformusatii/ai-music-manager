@@ -1,11 +1,12 @@
 <script setup>
 import { useRoute } from 'vue-router'
-import { Search, Disc, ListMusic, Play, Activity } from 'lucide-vue-next'
+import { Search, Disc, ListMusic, Play, Activity, Youtube } from 'lucide-vue-next'
 
 const route = useRoute()
 const navItems = [
   { to: '/spotify', label: 'Spotify Search', icon: Search },
   { to: '/tracks', label: 'Local Tracks', icon: Disc },
+  { to: '/youtube/direct', label: 'Direct YouTube', icon: Youtube },
   { to: '/playlists', label: 'Playlists', icon: ListMusic },
   { to: '/player', label: 'Player', icon: Play },
   { to: '/downloads/jobs', label: 'Download Jobs', icon: Activity }

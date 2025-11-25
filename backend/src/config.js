@@ -32,7 +32,8 @@ export const appConfig = {
   },
   youtube: {
     apiKey: process.env.YOUTUBE_API_KEY || '',
-    maxResults: Number(process.env.YOUTUBE_MAX_RESULTS || 3)
+    maxResults: Number(process.env.YOUTUBE_MAX_RESULTS || 3),
+    directDownloadMaxItems: Number(process.env.YOUTUBE_DIRECT_MAX_ITEMS || 50)
   },
   ai: {
     provider: process.env.AI_PROVIDER || 'openai',

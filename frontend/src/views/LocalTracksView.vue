@@ -28,7 +28,8 @@ const filters = reactive({
   name: '',
   artist: '',
   album: '',
-  status: ''
+  status: '',
+  source: ''
 })
 
 const state = reactive({
@@ -45,6 +46,7 @@ const columns = [
   { key: 'duration', label: 'Duration' },
   { key: 'spotifyId', label: 'Spotify ID' },
   { key: 'downloadStatus', label: 'Status' },
+  { key: 'source', label: 'Source' },
   { key: 'filePath', label: 'File' }
 ]
 
@@ -218,11 +220,13 @@ onMounted(() => {
     </div>
 
     <div class="card shadow-sm p-3 mb-4">
-      <div class="row g-3">
-        <div class="col-md-3"><input class="form-control" placeholder="Track name" v-model="filters.name" @keyup.enter="applyFilters" /></div>
-        <div class="col-md-3"><input class="form-control" placeholder="Artist" v-model="filters.artist" @keyup.enter="applyFilters" /></div>
-        <div class="col-md-3"><input class="form-control" placeholder="Album" v-model="filters.album" @keyup.enter="applyFilters" /></div>
-        <div class="col-md-2">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4"><input class="form-control" placeholder="Track name" v-model="filters.name" @keyup.enter="applyFilters" /></div>
+        <div class="col-md-4"><input class="form-control" placeholder="Artist" v-model="filters.artist" @keyup.enter="applyFilters" /></div>
+        <div class="col-md-4"><input class="form-control" placeholder="Album" v-model="filters.album" @keyup.enter="applyFilters" /></div>
+      </div>
+      <div class="row g-3 align-items-end mt-1">
+        <div class="col-md-3">
           <select class="form-select" v-model="filters.status" @change="applyFilters">
             <option value="">Any status</option>
             <option value="not_downloaded">Not Downloaded</option>
@@ -232,7 +236,14 @@ onMounted(() => {
             <option value="download_failed">Failed</option>
           </select>
         </div>
-        <div class="col-md-1 d-grid">
+        <div class="col-md-3">
+          <select class="form-select" v-model="filters.source" @change="applyFilters">
+            <option value="">Any source</option>
+            <option value="spotify">Spotify</option>
+            <option value="youtube_direct">YouTube Direct</option>
+          </select>
+        </div>
+        <div class="col-md-2 d-grid">
           <button class="btn btn-primary" @click="applyFilters">Filter</button>
         </div>
       </div>
@@ -309,6 +320,9 @@ onMounted(() => {
               <span class="badge" :class="`bg-${statusBadges[track.downloadStatus] || 'secondary'}`">
                 {{ track.downloadStatus?.replace('_', ' ') || 'not_downloaded' }}
               </span>
+            </td>
+            <td v-if="visibleColumns.includes('source')">
+              <span class="badge bg-light text-dark border">{{ (track.source || 'spotify').replace('_', ' ') }}</span>
             </td>
             <td v-if="visibleColumns.includes('filePath')">
               <a v-if="track.filePath" :href="`/${track.filePath}`" target="_blank">Download file</a>

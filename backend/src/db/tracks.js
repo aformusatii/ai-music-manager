@@ -1,6 +1,7 @@
 import { tracksDb } from './index.js';
 
 const DEFAULT_STATUS = 'not_downloaded';
+const DEFAULT_SOURCE = 'spotify';
 
 export async function listTracks(options = {}) {
   const {
@@ -31,19 +32,28 @@ function matchFilters(track, filters) {
     name,
     artist,
     album,
-    status
+    status,
+    source
   } = filters;
 
-  if (name && !track.name.toLowerCase().includes(name.toLowerCase())) {
+  const trackName = (track.name || '').toLowerCase();
+  const trackArtists = Array.isArray(track.artists) ? track.artists.join(', ').toLowerCase() : String(track.artists || '').toLowerCase();
+  const trackAlbum = (track.album || '').toLowerCase();
+  const trackSource = (track.source || DEFAULT_SOURCE).toLowerCase();
+
+  if (name && !trackName.includes(name.toLowerCase())) {
     return false;
   }
-  if (artist && !track.artists?.join(', ').toLowerCase().includes(artist.toLowerCase())) {
+  if (artist && !trackArtists.includes(artist.toLowerCase())) {
     return false;
   }
-  if (album && !(track.album || '').toLowerCase().includes(album.toLowerCase())) {
+  if (album && !trackAlbum.includes(album.toLowerCase())) {
     return false;
   }
   if (status && track.downloadStatus !== status) {
+    return false;
+  }
+  if (source && trackSource !== source.toLowerCase()) {
     return false;
   }
   return true;
@@ -90,9 +100,9 @@ export async function removeTrack(id) {
 }
 
 export async function upsertTrack(track) {
-  const id = track.id || track.spotifyId;
+  const id = resolveTrackId(track);
   if (!id) {
-    throw new Error('Track must include an id or spotifyId');
+    throw new Error('Track must include an id, spotifyId, or youtubeVideoId');
   }
   const existing = await getTrack(id);
   const payload = {
@@ -100,6 +110,7 @@ export async function upsertTrack(track) {
     ...track,
     id,
     downloadStatus: track.downloadStatus || existing?.downloadStatus || DEFAULT_STATUS,
+    source: track.source || existing?.source || DEFAULT_SOURCE,
     createdAt: existing?.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -135,4 +146,26 @@ export async function setDownloadStatus(id, status, extra = {}) {
   };
   await tracksDb.put(id, updated);
   return updated;
+}
+
+export async function findTrackByYoutubeVideoId(videoId) {
+  if (!videoId) return null;
+  for await (const [, value] of tracksDb.iterator()) {
+    if (value.youtubeVideoId === videoId) {
+      return value;
+    }
+  }
+  return null;
+}
+
+export function buildYoutubeTrackId(videoId) {
+  if (!videoId) return null;
+  return `yt_${videoId}`;
+}
+
+function resolveTrackId(track) {
+  if (track.id) return track.id;
+  if (track.spotifyId) return track.spotifyId;
+  if (track.youtubeVideoId) return buildYoutubeTrackId(track.youtubeVideoId);
+  return null;
 }

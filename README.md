@@ -50,6 +50,7 @@ AI_API_KEY=your-openai-api-key
 AI_MODEL=gpt-4o-mini
 AI_YT_MAX_ATTEMPTS=3
 AI_YT_SYSTEM_PROMPT=
+YOUTUBE_DIRECT_MAX_ITEMS=50
 ```
 
 - `DB_PATH` points to the Level database folder.
@@ -60,6 +61,7 @@ AI_YT_SYSTEM_PROMPT=
 - `AI_PROVIDER`, `AI_API_KEY`, and `AI_MODEL` configure the LLM that drives the multi-attempt YouTube search (currently OpenAI only).
 - `AI_YT_MAX_ATTEMPTS` caps how many tool-driven searches the agent will execute per track (defaults to `3`).
 - `AI_YT_SYSTEM_PROMPT` lets you override the default system instructions that steer the YouTube search agent.
+- `YOUTUBE_DIRECT_MAX_ITEMS` caps how many entries from a single playlist/Mix URL are enqueued when using the Direct YouTube Download page (defaults to `50`).
 
 ## Installation
 
@@ -98,7 +100,8 @@ PORT=4000 npm run start  # serves API + built frontend + downloads
 ## Major Features
 
 - **Spotify Search**: Search artists, browse their albums/tracks, toggle visible columns, select tracks, and import them into the local database without duplicates.
-- **Local Library**: Filter, sort, and paginate tracks; toggle column visibility; delete tracks (optionally removing downloaded files); trigger single or bulk YouTube downloads; add to playlists; build ad-hoc playback queues.
+- **Local Library**: Filter, sort, and paginate tracks; toggle column visibility (including a Source column to distinguish Spotify vs Direct YouTube imports); delete tracks (optionally removing downloaded files); trigger single or bulk YouTube downloads; add to playlists; build ad-hoc playback queues.
+- **Direct YouTube Download**: Paste any YouTube video or playlist/Mix URL to enqueue downloads without going through Spotify. The backend deduplicates by video ID, uses the same processing pipeline as Spotify-origin tracks, and respects the `YOUTUBE_DIRECT_MAX_ITEMS` cap for huge playlists.
 - **YouTube Downloads**: Backend now resolves the best video through an AI-guided workflow that calls the YouTube Data API as a tool, then enqueues yt-dlp jobs and updates download status (`not_downloaded`, `download_pending`, `download_in_progress`, `downloaded`, `download_failed`). Parallelism is configurable, and a dedicated *Download Jobs* view surfaces live stats plus aggregated yt-dlp logs.
 - **Playlists**: Create/update/delete playlists, avoid duplicate entries, reorder tracks, and detach tracks without deleting from the library.
 - **Player**: Simple audio player that can load saved playlists or the ad-hoc queue; includes play/pause/next/previous controls and displays metadata.
@@ -108,6 +111,7 @@ PORT=4000 npm run start  # serves API + built frontend + downloads
 
 - The Spotify integration uses the Client Credentials flow, so only public artist/album/track data is available (no user-specific data).
 - yt-dlp downloads use an in-memory queue with configurable parallelism. Increase `DOWNLOAD_MAX_CONCURRENT` for faster bulk imports, but keep host/network limits in mind.
+- Direct playlist/Mix submissions only enqueue the first `YOUTUBE_DIRECT_MAX_ITEMS` entries to avoid runaway queues; raise this env var if you need to import more than 50 at once.
 - The backend is single-user by design and does not include authentication.
 - LevelDB data and downloaded files remain on disk until manually removed.
 

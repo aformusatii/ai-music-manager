@@ -81,3 +81,8 @@ export async function reorderPlaylist(id, trackIds) {
   const { data } = await api.post(`/playlists/${id}/reorder`, { trackIds })
   return data
 }
+
+export async function requestDirectYoutubeDownload(url) {
+  const { data } = await api.post('/youtube/direct-download', { url })
+  return data
+}

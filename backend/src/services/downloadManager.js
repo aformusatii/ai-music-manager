@@ -1,11 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { appConfig } from '../config.js';
 import { setDownloadStatus, getTrack } from '../db/tracks.js';
-import { sanitizeFilename } from '../utils/file.js';
 import { resolveYoutubeTrack } from './youtube.js';
+import { processYoutubeDownload } from './youtubeDownloadProcessor.js';
 
 fs.mkdirSync(appConfig.downloadsDir, { recursive: true });
 
@@ -86,7 +85,7 @@ class DownloadManager extends EventEmitter {
       await setDownloadStatus(trackId, 'download_failed', { error: 'Track not found' });
       throw new Error('Track not found');
     }
-    let videoId = job.videoId;
+    let videoId = job.videoId || track.youtubeVideoId;
     if (!videoId) {
       this.log(job.id, 'Resolving YouTube video via AI workflow');
       const searchResult = await resolveYoutubeTrack(track, {
@@ -105,33 +104,13 @@ class DownloadManager extends EventEmitter {
     } else {
       this.log(job.id, `Using provided YouTube video id ${videoId}`);
     }
-    const safeName = sanitizeFilename(`${track.artists?.[0] || 'unknown'}_${track.name}`);
-    const targetFilename = `${safeName}_${trackId}.${appConfig.download.audioFormat}`;
-    const outputPath = path.join(appConfig.downloadsDir, targetFilename);
-    const youtubeUrl = `https://www.youtube.com/watch?v=${videoId}`;
-
-    job.outputPath = outputPath;
-    await setDownloadStatus(trackId, 'download_in_progress');
-    this.log(job.id, `Downloading to ${outputPath}`);
-
-    const args = [
-      youtubeUrl,
-      '-x',
-      '--audio-format',
-      appConfig.download.audioFormat,
-      '-o',
-      outputPath
-    ];
-
-    try {
-      await runYtDlp(args, (line) => this.log(job.id, line));
-      const relativePath = path.join('downloads', path.basename(outputPath));
-      await setDownloadStatus(trackId, 'downloaded', { filePath: relativePath });
-      job.filePath = relativePath;
-    } catch (error) {
-      await setDownloadStatus(trackId, 'download_failed', { error: error.message });
-      throw error;
-    }
+    job.videoId = videoId;
+    const result = await processYoutubeDownload({
+      trackId,
+      youtubeVideoId: videoId,
+      logger: (line) => this.log(job.id, line)
+    });
+    job.filePath = result.filePath;
   }
 
   log(jobId, message) {
@@ -182,30 +161,6 @@ class DownloadManager extends EventEmitter {
       this.jobs.delete(oldestId);
     }
   }
-}
-
-function runYtDlp(args, onLog) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(appConfig.download.ytDlpPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    child.stdout.on('data', (data) => {
-      const text = data.toString();
-      onLog?.(`[stdout] ${text.trimEnd()}`);
-    });
-    child.stderr.on('data', (data) => {
-      const text = data.toString();
-      onLog?.(`[stderr] ${text.trimEnd()}`);
-    });
-    child.on('error', (error) => {
-      reject(new Error(`yt-dlp failed to start: ${error.message}`));
-    });
-    child.on('close', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`yt-dlp exited with code ${code}`));
-      }
-    });
-  });
 }
 
 export const downloadManager = new DownloadManager();
